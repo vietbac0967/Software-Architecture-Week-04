@@ -1,23 +1,28 @@
 package org.example.orderservice.models;
 
-import jakarta.persistence.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
+
 @Data
-@Entity
-@Table(name = "orders")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Order {
+@RedisHash("Order")
+public class Order implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Indexed
     private Long id;
     private double price;
     private LocalDate createAt;
+    private Long userId;
 }

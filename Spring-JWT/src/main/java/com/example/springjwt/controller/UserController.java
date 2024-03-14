@@ -1,7 +1,10 @@
 package com.example.springjwt.controller;
 
+import com.example.springjwt.dto.OrderDTO;
+import com.example.springjwt.dto.UserResponse;
 import com.example.springjwt.model.AuthRequest;
 import com.example.springjwt.model.UserInfo;
+import com.example.springjwt.repository.UserInfoRepository;
 import com.example.springjwt.service.JWTService;
 import com.example.springjwt.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -19,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserInfoService userInfoService;
     private final JWTService jwtService;
+    private final UserInfoRepository userInfoRepository;
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -27,15 +34,25 @@ public class UserController {
         return "Welcome this endpoint is not secure";
     }
 
-    @PostMapping("/addNewUser")
+    @PostMapping("/register")
     public String addNewUser(@RequestBody UserInfo userInfo) {
         return userInfoService.addUser(userInfo);
     }
 
-    @GetMapping("/user/userProfile")
+    @GetMapping("/user/userProfile/{id}")
     @PreAuthorize("hasAuthority('ROLE_USER')")
-    public String userProfile() {
-        return "Welcome to User Profile";
+    public UserResponse userProfile(@PathVariable("id") Long id) {
+        final var userExist = userInfoRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        String api = "http://localhost:8080/api/v1/orders/" + id;
+        RestTemplate restTemplate = new RestTemplate();
+        OrderDTO[] orderDTOS = restTemplate.getForObject(api, OrderDTO[].class);
+        assert orderDTOS != null;
+
+        return UserResponse.builder()
+                .userId(id)
+                .name(userExist.getName())
+                .orderDTOS(List.of(orderDTOS))
+                .build();
     }
 
     @GetMapping("/admin/adminProfile")
@@ -44,7 +61,7 @@ public class UserController {
         return "Welcome to Admin Profile";
     }
 
-    @PostMapping("/generateToken")
+    @PostMapping("/login")
     public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
         if (authentication.isAuthenticated()) {

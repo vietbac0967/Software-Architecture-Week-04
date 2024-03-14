@@ -1,10 +1,15 @@
 package org.example.orderservice.repositories;
 
 import org.example.orderservice.models.Order;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
-@Repository
-public interface OrderRepository extends JpaRepository<Order,Long> {
+import java.util.List;
+
+
+
+public interface OrderRepository extends CrudRepository<Order,Long> {
+
+    List<Order> getOrderByUserId(Long userId);
 
 }
